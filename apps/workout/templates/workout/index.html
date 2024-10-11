@@ -11,7 +11,6 @@
     <!-- Carregar acesso aos arquivos estáticos do Django -->
     {% load static %}
     <!-- Ícone de Favorito -->
-    <!--[if IE]><link rel="shortcut icon" href="{% static 'workout/images/fav.png' }"><![endif]-->
     <link rel="icon" href="{% static 'workout/images/fav.png' %}">
     <!-- Bootstrap CSS-->
     <link rel="stylesheet" href="{% static 'workout/css/bootstrap.min.css' %}">
@@ -25,13 +24,16 @@
     <link rel="stylesheet" href="{% static 'workout/css/style.red.css' %}" id="theme-stylesheet">
     <!-- Folha de estilo personalizada-->
     <link rel="stylesheet" href="{% static 'workout/css/custom.css' %}">
-    <!-- Ajustes para versões antigas do IE-->
-    <!--[if lt IE 9]>
-        <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
-        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script><![endif]-->
 </head>
 
 <body>
+    <!-- Redirecionar usuário autenticado para o dashboard -->
+    {% if user.is_authenticated %}
+        <script>
+            window.location.href = "{% url 'dashboard' %}";
+        </script>
+    {% endif %}
+
     <div class="login-page">
         <div class="container d-flex align-items-center">
             <div class="form-holder has-shadow">
@@ -52,30 +54,42 @@
                         <div class="form d-flex align-items-center">
                             <div class="content">
                                 <!-- Mensagens de Informação -->
-                                {% if messages %} {% for message in messages %} {% if message.tags == "invalid_session info" %}
-                                <div class="alert alert-info alert-dismissable" role="alert">
-                                    <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-                                    <strong>Atenção!</strong> {{ message }}
-                                </div>
-                                {% endif %} {% endfor %} {% endif %}
+                                {% if messages %}
+                                    {% for message in messages %}
+                                        {% if message.tags == "invalid_session info" %}
+                                            <div class="alert alert-info alert-dismissable" role="alert">
+                                                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                                                <strong>Atenção!</strong> {{ message }}
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
                                 <!-- Mensagem de Logout -->
-                                {% if messages %} {% for message in messages %} {% if message.tags == "logout success" %}
-                                <div class="alert alert-success alert-dismissable" role="alert">
-                                    <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-                                    <strong>Sucesso!</strong> {{ message }}
-                                </div>
-                                {% endif %} {% endfor %} {% endif %}
+                                {% if messages %}
+                                    {% for message in messages %}
+                                        {% if message.tags == "logout success" %}
+                                            <div class="alert alert-success alert-dismissable" role="alert">
+                                                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                                                <strong>Sucesso!</strong> {{ message }}
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
                                 <!-- Formulário de Login -->
-                                <form id="login-form" action="/user/login" method="POST">
+                                <form id="login-form" action="{% url 'login' %}" method="POST">
                                     <!-- Django CSRF Token -->
                                     {% csrf_token %}
                                     <!-- Mensagens de Erro de Login -->
-                                    {% if messages %} {% for message in messages %} {% if message.tags == "login error" %}
-                                    <div class="alert alert-danger alert-dismissable" role="alert">
-                                        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-                                        <strong>Erro!</strong> {{ message }}
-                                    </div>
-                                    {% endif %} {% endfor %} {% endif %}
+                                    {% if messages %}
+                                        {% for message in messages %}
+                                            {% if message.tags == "login error" %}
+                                                <div class="alert alert-danger alert-dismissable" role="alert">
+                                                    <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                                                    <strong>Erro!</strong> {{ message }}
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
                                     <!-- Nome de Usuário -->
                                     <div class="form-group">
                                         <input id="username" type="text" name="username" required class="input-material form-control-lg less-dark" placeholder="Nome de usuário">
@@ -88,7 +102,7 @@
                                     <input id="login" type="submit" value="Entrar" class="btn btn-primary btn-lg">
                                 </form>
                                 <br>
-                                <small>Não tem uma conta? <a href="/user/register" class="signup">Cadastre-se</a></small>
+                                <small>Não tem uma conta? <a href="{% url 'register' %}" class="signup">Cadastre-se</a></small>
                             </div>
                         </div>
                     </div>
@@ -96,13 +110,14 @@
             </div>
         </div>
     </div>
+
     <!-- Arquivos Javascript-->
     <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
     <script src="{% static 'workout/javascript/bootstrap.min.js' %}"></script>
     <script src="{% static 'workout/javascript/jquery.cookie.js' %}"></script>
-    <!-- <script src="{% static 'workout/javascript/Chart.min.js' %}"></script> -->
     <script src="{% static 'workout/javascript/front.js' %}"></script>
 </body>
 
 </html>
+
