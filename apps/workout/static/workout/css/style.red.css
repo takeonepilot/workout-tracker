@@ -2495,7 +2495,9 @@ STYLE SWITCHER FOR DEMO
   line-height: 1.5;
   border-radius: 0.2rem;
 }
-
+.text-custom {
+  color: #8a8d93 !important;
+}
 /*
  * 3. TYPE
  */
@@ -2504,7 +2506,7 @@ body {
   font-size: 1rem;
   font-weight: normal;
   line-height: 1.5;
-  color: #212529;
+  color: #8a8d93;
   background-color: #fff;
 }
 

@@ -1,0 +1,16 @@
+{% extends "workout/base.html" %}
+{% block title %}Próxima Sessão de Treino{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="h5">Próxima Sessão de Treino</h2>
+    <div class="card bg-dark text-white mb-4">
+        <div class="card-body">
+            <h4 class="card-title">{{ next_session.workout_plan.name }}</h4>
+            <h6 class="card-subtitle mb-2 text-muted">Data: {{ next_session.date | date:"d/m/Y H:i" }}</h6>
+            <p class="card-text">{{ next_session.workout_plan.description }}</p>
+            <a href="{% url 'view_session' next_session.id %}" class="btn btn-primary">Iniciar Sessão</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

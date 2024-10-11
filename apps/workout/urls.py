@@ -2,21 +2,40 @@
 
 Our workout application URLs.
 """
-from django.conf.urls import url
+
+from django.urls import path
 from . import views
 
 urlpatterns = [
-    url(r'^$', views.login), # index / login page
-    url(r'^user/register$', views.register), # get register page / register user
-    url(r'^user/login$', views.login), # logs in existing user
-    url(r'^user/logout$', views.logout), # destroys user session
-    url(r'^dashboard$', views.dashboard), # get dashboard
-    url(r'^workout$', views.new_workout), # get workout page / add workout
-    url(r'^workout/(?P<id>\d*)$', views.workout), # get workout / update workout
-    url(r'^workout/(?P<id>\d*)/exercise$', views.exercise), # add exercise
-    url(r'^workout/(?P<id>\d*)/complete$', views.complete_workout), # complete workout
-    url(r'^workout/(?P<id>\d*)/edit$', views.edit_workout), # edit workout
-    url(r'^workout/(?P<id>\d*)/delete$', views.delete_workout), # delete workout
-    url(r'^workouts$', views.all_workouts), # get all workouts
-    url(r'^legal/tos$', views.tos), # get terms of service
+    # User Management
+    path("", views.login, name="login"),  # Index / Login page
+    path("user/register", views.register, name="register"),  # Register user
+    path("user/login", views.login, name="login_user"),  # Log in existing user
+    path("user/logout", views.logout, name="logout"),  # Log out user
+    # Dashboard
+    path("dashboard", views.dashboard, name="dashboard"),  # Dashboard view
+    # Workout Management
+    path("workout", views.new_workout, name="new_workout"),  # Add new workout
+    path("workouts", views.all_workouts, name="all_workouts"),  # View all workouts
+    path("workout/<int:id>/", views.workout, name="view_workout"),  # View a workout
+    path(
+        "workout/<int:id>/exercise", views.exercise, name="add_exercise"
+    ),  # Add exercise to workout
+    path(
+        "workout/<int:id>/complete", views.complete_workout, name="complete_workout"
+    ),  # Complete workout
+    path(
+        "workout/<int:id>/edit", views.edit_workout, name="edit_workout"
+    ),  # Edit workout
+    path(
+        "workout/<int:id>/delete", views.delete_workout, name="delete_workout"
+    ),  # Delete workout
+    # Workout Sessions
+    path("workout/session/<int:id>/", views.view_session, name="view_session"),
+    path("workout/next-session", views.next_session, name="next_session"),
+    path("history", views.session_history, name="history"),  # View session history
+    # User Settings
+    path("settings", views.settings, name="settings"),  # User settings
+    # Legal and Terms
+    path("legal/tos", views.tos, name="tos"),  # Terms of Service
 ]

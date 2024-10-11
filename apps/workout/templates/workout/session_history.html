@@ -1,0 +1,28 @@
+{% extends "workout/base.html" %}
+{% block title %}Histórico de Sessões{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="h5">Histórico de Sessões</h2>
+    <table class="table table-striped text-light">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Treino</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for session in sessions %}
+            <tr>
+                <td>{{ session.date | date:"d/m/Y H:i" }}</td>
+                <td>{{ session.workout_plan.name }}</td>
+                <td>
+                    <a href="{% url 'view_session' session.id %}" class="btn btn-primary btn-sm">Ver Detalhes</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

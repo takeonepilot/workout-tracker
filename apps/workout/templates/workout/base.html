@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>{% block title %}FitnessTracker{% endblock %}</title>
+    <meta name="description" content="Um rastreador de treino para ajudar você a acompanhar seus exercícios e progressos.">
+    <meta name="keywords" content="Fitness, Treino, Exercícios, Acompanhamento, Saúde, Bem-estar">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="all,follow">
+    {% load static %}
+    <link rel="icon" href="{% static 'workout/images/fav.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'workout/images/fav.png' %}">
+    <!-- Bootstrap CSS-->
+    <link rel="stylesheet" href="{% static 'workout/css/bootstrap.min.css' %}">
+    <!-- Font Awesome CSS-->
+    <link rel="stylesheet" href="{% static 'workout/css/font-awesome.min.css' %}">
+    <!-- Custom Font Icons CSS-->
+    <link rel="stylesheet" href="{% static 'workout/css/font.css' %}">
+    <!-- Google fonts - Muli-->
+    <link href="https://fonts.googleapis.com/css2?family=Muli:wght@300;400;700&display=swap" rel="stylesheet">
+    <!-- Theme stylesheet-->
+    <link rel="stylesheet" href="{% static 'workout/css/style.red.css' %}" id="theme-stylesheet">
+    <!-- Custom stylesheet-->
+    <link rel="stylesheet" href="{% static 'workout/css/custom.css' %}">
+    <!-- Tweaks for older IEs-->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+    <header class="header">
+        <nav class="navbar navbar-expand-lg">
+            <div class="container-fluid d-flex align-items-center justify-content-between">
+                <div class="navbar-header">
+                    <a href="/dashboard" class="navbar-brand">
+                        <div class="brand-text brand-big visible text-uppercase">
+                            <strong class="text-primary">Fitness</strong><strong>Tracker</strong>
+                        </div>
+                        <div class="brand-text brand-sm">
+                            <strong class="text-primary">F</strong><strong>T</strong>
+                        </div>
+                    </a>
+                    <button class="sidebar-toggle"><i class="fa fa-long-arrow-left"></i></button>
+                </div>
+                <ul class="right-menu list-inline no-margin-bottom">
+                    <li class="list-inline-item">
+                        <a href="#" class="search-open nav-link"><i class="icon-magnifying-glass-browser"></i></a>
+                    </li>
+                    <li class="list-inline-item logout">
+                        <a id="logout" href="/user/logout" class="nav-link">Sair <i class="icon-logout"></i></a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <div class="d-flex align-items-stretch">
+        <nav id="sidebar">
+            <div class="sidebar-header d-flex align-items-center">
+                <img src="{% static 'workout/images/badges/badge_1.png' %}" alt="Avatar" class="img-fluid rounded-circle avatar">
+                <div class="title">
+                    <h1 class="h5">{{ user.username }}</h1>
+                    <p>{{ user.level_name }}</p>
+                </div>
+            </div>
+            <span class="heading">Menu</span>
+            <ul class="list-unstyled">
+                <li class="{% if request.path == '/dashboard' %}active{% endif %}">
+                    <a href="{% url 'dashboard' %}"><i class="icon-home"></i> Início</a>
+                </li>
+                <li class="{% if request.path == '/workout' %}active{% endif %}">
+                    <a href="{% url 'new_workout' %}"><i class="fa fa-plus-square"></i> Novo Treino</a>
+                </li>
+                <li class="{% if request.path == '/workouts' %}active{% endif %}">
+                    <a href="{% url 'all_workouts' %}"><i class="fa fa-th-list"></i> Meus Treinos</a>
+                </li>
+                <li class="{% if 'workout/session' in request.path or 'workout/next-session' in request.path %}active{% endif %}">
+                    {% if session %}
+                        <a href="{% url 'view_session' session.id %}">
+                            <i class="fa fa-calendar"></i> Sessão de Treino Atual
+                        </a>
+                    {% else %}
+                        <a href="{% url 'next_session' %}">
+                            <i class="fa fa-calendar"></i> Sessão de Treino Atual
+                        </a>
+                    {% endif %}
+                </li>       
+                <li class="{% if request.path == '/history' %}active{% endif %}">
+                    <a href="{% url 'history' %}"><i class="fa fa-history"></i> Histórico de Sessões</a>
+                </li>
+                <li class="{% if request.path == '/settings' %}active{% endif %}">
+                    <a href="{% url 'settings' %}"><i class="fa fa-cog"></i> Configurações</a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="page-content">
+            {% block content %}
+            <!-- Bloco de conteúdo específico das páginas -->
+            {% endblock %}
+        </div>
+    </div>
+
+    <footer class="footer fixed-bottom no-margin-bottom">
+        <div class="footer__block block no-margin-bottom">
+            <div class="container-fluid text-center">
+                <p class="no-margin-bottom">2024 &copy; <a href="#" target="_blank" class="sasquatch-footer-link">AUTH</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Files-->
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
+    <script src="{% static 'workout/javascript/bootstrap.min.js' %}"></script>
+    <script src="{% static 'workout/javascript/jquery.cookie.js' %}"></script>
+    <script src="{% static 'workout/javascript/front.js' %}"></script>
+</body>
+
+</html>

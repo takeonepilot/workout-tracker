@@ -1,5 +1,5 @@
 from django.apps import AppConfig
 
-
 class WorkoutConfig(AppConfig):
-    name = 'workout'
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'apps.workout'

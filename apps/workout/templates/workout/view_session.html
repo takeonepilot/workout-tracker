@@ -1,0 +1,83 @@
+{% extends 'workout/base.html' %}
+
+{% block title %}Sessão de Treino - FitnessTracker{% endblock %}
+
+{% block content %}
+<div class="page-content">
+    <div class="page-header">
+        <div class="container-fluid">
+            <h2 class="h5 no-margin-bottom">Sessão de Treino: {{ session.workout_plan.name }}</h2>
+            <p><strong>Data:</strong> {{ session.date | date:"d/m/Y H:i" }}</p>
+        </div>
+    </div>
+    <section class="no-padding-bottom">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-12 text-light">
+                    <h5 class="mt-3">Exercícios Realizados:</h5>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Exercício</th>
+                                <th>Peso (kg)</th>
+                                <th>Repetições</th>
+                                <th>RPE</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for exercise in exercises %}
+                            <tr>
+                                <td>{{ exercise.exercise_plan.name }}</td>
+                                <td>{{ exercise.weight_used|floatformat }} kg</td>
+                                <td>{{ exercise.actual_repetitions }}</td>
+                                <td>{{ exercise.rpe }}</td>
+                                <td>
+                                    <button class="btn btn-link" data-toggle="modal" data-target="#updateExerciseModal{{ exercise.id }}">Editar</button>
+                                </td>
+                            </tr>
+
+                            <!-- Modal para atualizar peso e repetições do exercício -->
+                            <div class="modal fade" id="updateExerciseModal{{ exercise.id }}" tabindex="-1" role="dialog" aria-labelledby="updateExerciseModalLabel{{ exercise.id }}" aria-hidden="true">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content bg-dark text-light">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="updateExerciseModalLabel{{ exercise.id }}">Atualizar {{ exercise.exercise_plan.name }}</h5>
+                                            <button type="button" class="close text-light" data-dismiss="modal" aria-label="Fechar">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <form action="{% url 'update_exercise_session' id=session.id exercise_id=exercise.id %}" method="POST">
+                                            {% csrf_token %}
+                                            <div class="modal-body">
+                                                <div class="form-group">
+                                                    <label for="weight_used_{{ exercise.id }}">Peso Utilizado (kg)</label>
+                                                    <input type="number" name="weight_used" class="form-control" id="weight_used_{{ exercise.id }}" value="{{ exercise.weight_used|floatformat }}" step="0.1" required>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="actual_repetitions_{{ exercise.id }}">Repetições Realizadas</label>
+                                                    <input type="number" name="actual_repetitions" class="form-control" id="actual_repetitions_{{ exercise.id }}" value="{{ exercise.actual_repetitions }}" required>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="rpe_{{ exercise.id }}">RPE (1-10)</label>
+                                                    <input type="number" name="rpe" class="form-control" id="rpe_{{ exercise.id }}" value="{{ exercise.rpe }}" min="1" max="10" required>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                                <button type="submit" class="btn btn-primary">Salvar</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <a href="{% url 'all_workouts' %}" class="btn btn-primary">Voltar para Todos os Treinos</a>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
