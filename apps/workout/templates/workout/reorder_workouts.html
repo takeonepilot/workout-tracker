@@ -1,0 +1,30 @@
+{% extends 'workout/base.html' %}
+
+{% block title %}Organizar Treinos - FitnessTracker{% endblock %}
+
+{% block content %}
+<div class="page-content">
+    <div class="page-header">
+        <div class="container-fluid">
+            <h2 class="h5 no-margin-bottom">Organize a Ordem dos Treinos: {{ plan.name }}</h2>
+            <p>Arraste os treinos para definir a ordem em que deseja realizá-los.</p>
+        </div>
+    </div>
+    <section class="no-padding-bottom">
+        <div class="container-fluid">
+            <form method="POST">
+                {% csrf_token %}
+                <ul class="list-group">
+                    {% for plan_workout in plan_workouts %}
+                    <li class="list-group-item" draggable="true">
+                        <input type="hidden" name="order" value="{{ plan_workout.workout.id }}">
+                        <span>{{ plan_workout.workout.name }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                <button type="submit" class="btn btn-primary mt-3">Salvar Ordem</button>
+            </form>
+        </div>
+    </section>
+</div>
+{% endblock %}

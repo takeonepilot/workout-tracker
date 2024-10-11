@@ -1,8 +1,3 @@
-"""workout app URL Configuration
-
-Our workout application URLs.
-"""
-
 from django.urls import path
 from . import views
 
@@ -34,6 +29,18 @@ urlpatterns = [
     path("workout/session/<int:id>/", views.view_session, name="view_session"),
     path("workout/next-session", views.next_session, name="next_session"),
     path("history", views.session_history, name="history"),  # View session history
+    # Update Exercise Session - Adicionando a rota para atualizar os detalhes do exercício
+    path(
+        "session/<int:id>/exercise/<int:exercise_id>/update/",
+        views.update_exercise_session,
+        name="update_exercise_session",
+    ),
+    # apps/workout/urls.py
+    path(
+        "workout/plan/<int:plan_id>/reorder/",
+        views.reorder_workouts,
+        name="reorder_workouts",
+    ),
     # User Settings
     path("settings", views.settings, name="settings"),  # User settings
     # Legal and Terms

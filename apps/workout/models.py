@@ -1,9 +1,11 @@
+# models.py
 from django.db import models
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
     PermissionsMixin,
 )
+from django.utils import timezone
 import re
 
 
@@ -223,13 +225,39 @@ class Exercise(models.Model):
         return f"{self.name} - {self.sets}x{self.repetitions} RPE {self.rpe}"
 
 
+class WorkoutPlan(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    cycle_length = models.IntegerField(
+        default=30
+    )  # Número de sessões antes de revisar o plano
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Plano de Treino: {self.name} - {self.user.username}"
+
+
+class PlanWorkout(models.Model):
+    plan = models.ForeignKey(WorkoutPlan, on_delete=models.CASCADE)
+    workout = models.ForeignKey(Workout, on_delete=models.CASCADE)
+    order = models.PositiveIntegerField()  # Define a ordem dos treinos no plano
+
+    class Meta:
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"{self.plan.name} - {self.workout.name} (Ordem: {self.order})"
+
+
 class WorkoutSession(models.Model):
-    workout_plan = models.ForeignKey(Workout, on_delete=models.CASCADE)
+    workout_plan = models.ForeignKey(WorkoutPlan, on_delete=models.CASCADE)
+    workout = models.ForeignKey(Workout, on_delete=models.CASCADE, default=1)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Sessão de {self.workout_plan.name} em {self.date}"
+        return f"Sessão de {self.workout.name} em {self.date}"
 
 
 class ExerciseSession(models.Model):

@@ -1,9 +1,9 @@
+# apps\workout\views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import authenticate, login as auth_login
-from django.http import HttpResponse
 from django.utils import timezone
-from .models import User, Workout, Exercise, WorkoutSession, ExerciseSession
+from .models import *
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 
@@ -230,6 +230,32 @@ def complete_workout(request, id):
         return redirect(f"/workout/{id}")
 
 
+def reorder_workouts(request, plan_id):
+    user = get_logged_in_user(request)
+    if not user:
+        return redirect("/")
+
+    plan = get_object_or_404(WorkoutPlan, id=plan_id, user=user)
+    plan_workouts = PlanWorkout.objects.filter(plan=plan).order_by("order")
+
+    if request.method == "POST":
+        # Recebe a nova ordem dos treinos
+        new_order = request.POST.getlist("order")  # Ex.: ['3', '1', '2']
+        for index, workout_id in enumerate(new_order):
+            plan_workout = PlanWorkout.objects.get(plan=plan, workout_id=workout_id)
+            plan_workout.order = index + 1  # Atualiza a posição
+            plan_workout.save()
+
+        messages.success(request, "Ordem dos treinos atualizada com sucesso!")
+        return redirect("next_session")
+
+    context = {
+        "plan": plan,
+        "plan_workouts": plan_workouts,
+    }
+    return render(request, "workout/reorder_workouts.html", context)
+
+
 def view_session(request, id):
     user = get_logged_in_user(request)
     if not user:
@@ -251,27 +277,117 @@ def view_session(request, id):
     return render(request, "workout/view_session.html", context)
 
 
+def update_exercise_session(request, id, exercise_id):
+    user = get_logged_in_user(request)
+    if not user:
+        return redirect("/")
+
+    # Obtém a sessão e o exercício para garantir que pertencem ao usuário
+    session = get_object_or_404(WorkoutSession, id=id, user=user)
+    exercise = get_object_or_404(
+        ExerciseSession, id=exercise_id, workout_session=session
+    )
+
+    if request.method == "POST":
+        # Atualiza os detalhes do exercício
+        weight_used = request.POST.get("weight_used")
+        actual_repetitions = request.POST.get("actual_repetitions")
+        rpe = request.POST.get("rpe")
+
+        # Valida os valores e salva
+        try:
+            exercise.weight_used = float(weight_used)
+            exercise.actual_repetitions = int(actual_repetitions)
+            exercise.rpe = int(rpe)
+            exercise.save()
+            messages.success(
+                request, f"{exercise.exercise_plan.name} atualizado com sucesso!"
+            )
+        except ValueError:
+            messages.error(
+                request, "Valores inválidos fornecidos. Por favor, tente novamente."
+            )
+
+        return redirect("view_session", id=session.id)
+
+
+def get_next_workout(user):
+    # Obter o plano de treino atual do usuário
+    plan = WorkoutPlan.objects.filter(user=user).first()
+    if not plan:
+        print("Nenhum plano de treino encontrado para o usuário.")
+        return None
+
+    # Obter a última sessão de treino realizada pelo usuário
+    last_session = WorkoutSession.objects.filter(user=user).order_by("-date").first()
+
+    # Se não há sessões anteriores, retorna o primeiro treino do plano
+    if not last_session:
+        first_workout = PlanWorkout.objects.filter(plan=plan).order_by("order").first()
+        print(
+            f"Primeiro treino do plano: {first_workout.workout.name if first_workout else 'Nenhum treino'}"
+        )
+        return first_workout.workout if first_workout else None
+
+    # Buscar a ordem do último treino realizado no plano
+    last_plan_workout = PlanWorkout.objects.filter(
+        plan=plan, workout=last_session.workout
+    ).first()
+
+    # Obter o próximo treino pela ordem
+    next_plan_workout = (
+        PlanWorkout.objects.filter(plan=plan, order__gt=last_plan_workout.order)
+        .order_by("order")
+        .first()
+    )
+
+    # Se não há um próximo treino, volta para o primeiro treino do plano
+    if not next_plan_workout:
+        first_workout = PlanWorkout.objects.filter(plan=plan).order_by("order").first()
+        print(
+            f"Reiniciando sequência, próximo treino: {first_workout.workout.name if first_workout else 'Nenhum treino'}"
+        )
+        return first_workout.workout if first_workout else None
+
+    print(f"Próximo treino: {next_plan_workout.workout.name}")
+    return next_plan_workout.workout
+
+
 def next_session(request):
     user = get_logged_in_user(request)
     if not user:
         return redirect("/")
 
-    # Busca a próxima sessão com base na data atual
+    # Buscar o próximo treino da sequência
+    next_workout = get_next_workout(user)
+    if not next_workout:
+        messages.info(
+            request,
+            "Você não tem uma sequência de treinos configurada. Por favor, crie um plano de treino.",
+        )
+        print("Redirecionando para criação de treino.")
+        return redirect("/workout")
+
+    # Verificar se há uma sessão agendada para o próximo treino
     next_session = (
-        WorkoutSession.objects.filter(user=user, date__gt=timezone.now())
+        WorkoutSession.objects.filter(
+            user=user, workout=next_workout, date__gt=timezone.now()
+        )
         .order_by("date")
         .first()
     )
 
-    # Verifica se há uma próxima sessão
+    # Se não há uma sessão futura, cria uma nova sessão para o próximo treino
     if not next_session:
-        messages.info(
-            request,
-            "Você não tem nenhuma próxima sessão de treino agendada. Crie um novo treino para começar.",
+        next_session = WorkoutSession.objects.create(
+            user=user,
+            workout=next_workout,
+            workout_plan=next_workout.workoutplan_set.first(),
         )
-        return redirect("/workout")  # Redireciona para a criação de um novo treino
+        messages.success(request, f"Nova sessão de {next_workout.name} iniciada!")
+        print(f"Nova sessão criada para o treino: {next_workout.name}")
 
-    # Redireciona diretamente para a página da próxima sessão encontrada
+    print(f"Redirecionando para a sessão: {next_session.id}")
     return redirect("view_session", id=next_session.id)
 
 
