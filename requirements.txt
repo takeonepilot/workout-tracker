@@ -4,3 +4,4 @@ Django
 pycparser
 pytz
 six
+psycopg2

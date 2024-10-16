@@ -2,16 +2,17 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # Root URL ("/") - redirect to login
+    path("", views.login, name="root"),  # Root page redirects to login
     # User Management
-    path("", views.login, name="login"),  # Index / Login page
+    path("user/login", views.login, name="login"),  # Login page
     path("user/register", views.register, name="register"),  # Register user
-    path("user/login", views.login, name="login_user"),  # Log in existing user
     path("user/logout", views.logout, name="logout"),  # Log out user
     # Dashboard
     path("dashboard", views.dashboard, name="dashboard"),  # Dashboard view
     # Workout Management
     path("workout", views.new_workout, name="new_workout"),  # Add new workout
-    path("workouts", views.all_workouts, name="all_workouts"),  # View all workouts
+    path("workouts", views.all_workouts, name="all_workouts"),  # View all 
     path("workout/<int:id>/", views.workout, name="view_workout"),  # View a workout
     path(
         "workout/<int:id>/exercise", views.exercise, name="add_exercise"
@@ -26,21 +27,20 @@ urlpatterns = [
         "workout/<int:id>/delete", views.delete_workout, name="delete_workout"
     ),  # Delete workout
     # Workout Sessions
-    path("workout/session/<int:id>/", views.view_session, name="view_session"),
-    path("workout/next-session", views.next_session, name="next_session"),
-    path("history", views.session_history, name="history"),  # View session history
-    # Update Exercise Session - Adicionando a rota para atualizar os detalhes do exercício
     path(
-        "session/<int:id>/exercise/<int:exercise_id>/update/",
-        views.update_exercise_session,
-        name="update_exercise_session",
-    ),
-    # apps/workout/urls.py
+        "workout/session/<int:id>/", views.view_session, name="view_session"
+    ),  # View session details
+    path("workout/session/current", views.current_session, name="current_session"),
     path(
-        "workout/plan/<int:plan_id>/reorder/",
-        views.reorder_workouts,
-        name="reorder_workouts",
+        "workout/<int:workout_id>/start-session/",
+        views.start_workout_session,
+        name="start_workout_session",
     ),
+    path("history", views.session_history, name="session_history"),
+    # Import Workouts via Spreadsheet
+    path(
+        "workouts/import", views.importar_treinos, name="importar_treinos"
+    ),  # Import workouts from Excel file
     # User Settings
     path("settings", views.settings, name="settings"),  # User settings
     # Legal and Terms

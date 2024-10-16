@@ -78,19 +78,19 @@
                 <li class="{% if request.resolver_match.url_name == 'all_workouts' %}active{% endif %}">
                     <a href="{% url 'all_workouts' %}"><i class="fa fa-th-list"></i> Meus Treinos</a>
                 </li>
-                <li class="{% if request.resolver_match.url_name == 'view_session' or request.resolver_match.url_name == 'next_session' %}active{% endif %}">
-                    <a href="{% url 'next_session' %}">
+                <li class="{% if request.resolver_match.url_name == 'current_session' %}active{% endif %}">
+                    <a href="{% url 'current_session' %}">
                         <i class="fa fa-calendar"></i> Sessão de Treino Atual
                     </a>
                 </li>                
-                <li class="{% if request.resolver_match.url_name == 'history' %}active{% endif %}">
-                    <a href="{% url 'history' %}"><i class="fa fa-history"></i> Histórico de Sessões</a>
+                <li class="{% if request.resolver_match.url_name == 'session_history' %}active{% endif %}">
+                    <a href="{% url 'session_history' %}"><i class="fa fa-history"></i> Histórico de Sessões</a>
                 </li>
                 <li class="{% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
                     <a href="{% url 'settings' %}"><i class="fa fa-cog"></i> Configurações</a>
                 </li>
             </ul>
-        </nav>
+        </nav>  
         <div class="page-content">
             {% block content %}
             <!-- Bloco de conteúdo específico das páginas -->

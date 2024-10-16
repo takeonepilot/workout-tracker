@@ -1,95 +1,159 @@
 {% extends 'workout/base.html' %}
 
 {% block title %}Sessão de Treino - FitnessTracker{% endblock %}
-
 {% block content %}
-<div class="page-content">
-    <div class="page-header">
-        <div class="container-fluid">
-            <h2 class="h5 no-margin-bottom">Sessão de Treino: {{ session.workout_plan.name }}</h2>
-            <p><strong>Data:</strong> {{ session.date | date:"d/m/Y H:i" }}</p>
-        </div>
-    </div>
-    <section class="no-padding-bottom">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-lg-12 text-light">
-                    <!-- Exibe as mensagens de feedback (sucesso ou erro) -->
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
+<style>
+    input.form-control.input-dark {
+        background-color: #2a2a2a;
+        color: #fff;
+        border: 1px solid #444;
+    }
 
-                    <h5 class="mt-3">Exercícios Realizados:</h5>
-                    <table class="table table-striped">
-                        <thead>
+    input.form-control.input-dark:focus {
+        background-color: #2a2a2a;
+        color: #fff;
+        border-color: #555;
+        box-shadow: none;
+    }
+
+    .table-dark th, .table-dark td {
+        background-color: #343a40 !important;
+        color: #fff;
+    }
+
+    .thead-light th {
+        background-color: #495057 !important;
+        color: #fff;
+    }
+</style>
+
+<div class="page-header">
+    <div class="container-fluid">
+        <h2 class="h5 no-margin-bottom text-white">Sessão de Treino: {{ session.workout.name }}</h2>
+        <p><strong>Data:</strong> {{ session.date | date:"d/m/Y H:i" }}</p>
+    </div>
+</div>
+
+<section class="no-padding-bottom">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-lg-12 text-light">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form id="autosave-form" action="{% url 'view_session' id=session.id %}" method="POST">
+                    {% csrf_token %}
+                    <table class="table table-dark table-hover table-borderless mt-3">
+                        <thead class="thead-light">
                             <tr>
                                 <th>Exercício</th>
+                                <th>Série</th>
                                 <th>Peso (kg)</th>
                                 <th>Repetições</th>
                                 <th>RPE</th>
-                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for exercise in exercises %}
-                            <tr>
-                                <td>{{ exercise.exercise_plan.name }}</td>
-                                <td>{{ exercise.weight_used|floatformat }} kg</td>
-                                <td>{{ exercise.actual_repetitions }}</td>
-                                <td>{{ exercise.rpe }}</td>
-                                <td>
-                                    <button class="btn btn-link" data-toggle="modal" data-target="#updateExerciseModal{{ exercise.id }}">Editar</button>
-                                </td>
-                            </tr>
-
-                            <!-- Modal para atualizar peso e repetições do exercício -->
-                            <div class="modal fade" id="updateExerciseModal{{ exercise.id }}" tabindex="-1" role="dialog" aria-labelledby="updateExerciseModalLabel{{ exercise.id }}" aria-hidden="true">
-                                <div class="modal-dialog" role="document">
-                                    <div class="modal-content bg-dark text-light">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="updateExerciseModalLabel{{ exercise.id }}">Atualizar {{ exercise.exercise_plan.name }}</h5>
-                                            <button type="button" class="close text-light" data-dismiss="modal" aria-label="Fechar">
-                                                <span aria-hidden="true">&times;</span>
-                                            </button>
-                                        </div>
-                                        <form action="{% url 'update_exercise_session' id=session.id exercise_id=exercise.id %}" method="POST">
-                                            {% csrf_token %}
-                                            <div class="modal-body">
-                                                <div class="form-group">
-                                                    <label for="weight_used_{{ exercise.id }}">Peso Utilizado (kg)</label>
-                                                    <input type="number" name="weight_used" class="form-control" id="weight_used_{{ exercise.id }}" value="{{ exercise.weight_used|floatformat }}" step="0.1" required>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="actual_repetitions_{{ exercise.id }}">Repetições Realizadas</label>
-                                                    <input type="number" name="actual_repetitions" class="form-control" id="actual_repetitions_{{ exercise.id }}" value="{{ exercise.actual_repetitions }}" required>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="rpe_{{ exercise.id }}">RPE (1-10)</label>
-                                                    <input type="number" name="rpe" class="form-control" id="rpe_{{ exercise.id }}" value="{{ exercise.rpe }}" min="1" max="10" required>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                                                <button type="submit" class="btn btn-primary">Salvar</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
+                            {% load custom_filters %}  <!-- Carregando os filtros personalizados -->
+                            {% for exercise_data in exercises_with_series %}
+                                {% with exercise=exercise_data.exercise series=exercise_data.series series_range=exercise_data.series_range %}
+                                    {% for i in series_range %}
+                                        <tr id="series-row-{{ exercise.id }}-{{ i }}" style="display: {% if i == 1 %} table-row {% else %} none {% endif %};">
+                                            <td>{{ exercise.exercise.name }}</td>
+                                            <td>Série {{ i }}</td>
+                                            <td>
+                                                <input type="number" 
+                                                       name="weight_{{ exercise.id }}_{{ i }}" 
+                                                       value="{{ series|get_item_at_index:i|default:0 }}" 
+                                                       step="0.1" 
+                                                       class="form-control input-sm input-dark"
+                                                       oninput="checkAndMoveToNextSeries({{ exercise.id }}, {{ i }}, this)">
+                                            </td>
+                                            <td>
+                                                <input type="number" 
+                                                       name="repetitions_{{ exercise.id }}_{{ i }}" 
+                                                       value="{{ series|get_item_at_index:i|default:0 }}" 
+                                                       class="form-control input-sm input-dark"
+                                                       oninput="checkAndMoveToNextSeries({{ exercise.id }}, {{ i }}, this)">
+                                            </td>                                            
+                                            <td>{{ exercise.rpe }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% endwith %}
                             {% endfor %}
                         </tbody>
                     </table>
-                    <a href="{% url 'all_workouts' %}" class="btn btn-primary">Voltar para Todos os Treinos</a>
-                </div>
+                </form>
+
+                <form action="{% url 'complete_workout' session.workout.id %}" method="POST" class="mt-3">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-block">Concluir Treino</button>
+                </form>
+
+                <a href="{% url 'all_workouts' %}" class="btn btn-secondary mt-3">Voltar para Todos os Treinos</a>
             </div>
         </div>
-    </section>
-</div>
+    </div>
+</section>
+<script>
+    function checkAndMoveToNextSeries(exerciseId, currentSeries) {
+        // Obter os valores dos campos de peso e repetições
+        const weightInput = document.querySelector(`input[name="weight_${exerciseId}_${currentSeries}"]`);
+        const repetitionsInput = document.querySelector(`input[name="repetitions_${exerciseId}_${currentSeries}"]`);
+    
+        // Verifica se ambos os campos têm valor
+        if (weightInput.value && repetitionsInput.value) {
+            // Ocultar a linha da série atual
+            const currentRow = document.getElementById(`series-row-${exerciseId}-${currentSeries}`);
+            if (currentRow) {
+                currentRow.style.display = "none"; // Oculta a linha atual
+            }
+    
+            // Tenta exibir a próxima linha
+            const nextSeries = currentSeries + 1;
+            const nextRow = document.getElementById(`series-row-${exerciseId}-${nextSeries}`);
+            if (nextRow) {
+                nextRow.style.display = "table-row"; // Torna a próxima série visível
+                nextRow.querySelector('input[type="number"]').focus(); // Foca no campo da próxima série
+            }
+        }
+    }
+    // Adicionar evento 'blur' e 'keypress' para os campos de peso e repetições
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputs = document.querySelectorAll('input[type="number"]');
+        inputs.forEach(input => {
+            input.addEventListener('blur', function() {
+                // Obter o ID do exercício e da série a partir do nome do input
+                const nameParts = this.name.split('_');
+                const exerciseId = nameParts[1];
+                const seriesNumber = nameParts[2];
+
+                // Verifica se ambos os campos de peso e repetições estão preenchidos
+                checkAndMoveToNextSeries(exerciseId, seriesNumber);
+            });
+
+            input.addEventListener('keypress', function(event) {
+                // Verifica se a tecla pressionada é "Enter"
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // Evitar o comportamento padrão
+                    const nameParts = this.name.split('_');
+                    const exerciseId = nameParts[1];
+                    const seriesNumber = nameParts[2];
+
+                    // Verifica se ambos os campos de peso e repetições estão preenchidos
+                    checkAndMoveToNextSeries(exerciseId, seriesNumber);
+                }
+            });
+        });
+    });
+</script>
+
 {% endblock %}

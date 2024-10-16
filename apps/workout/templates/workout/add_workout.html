@@ -1,3 +1,4 @@
+<!-- apps/workout/templates/workout/add_workout.html -->
 {% extends 'workout/base.html' %}
 
 {% block title %}Adicionar Treino - FitnessTracker{% endblock %}
@@ -12,26 +13,31 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-lg-12">
-                <form id="workout-form" action="/workout" method="POST">
+                <form id="workout-form" action="{% url 'new_workout' %}" method="POST">
                     {% csrf_token %}
-                    <!-- Erros do Treino -->
+                    <!-- Exibir erros de validação, se houver -->
                     {% if messages %}
                         {% for message in messages %}
-                            {% if message.tags == "workout error" %}
-                                <div class="alert alert-danger alert-dismissable" role="alert">
-                                    <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-                                    <strong>Erro!</strong> {{ message }}
-                                </div>
-                            {% endif %}
+                            <div class="alert alert-danger alert-dismissable" role="alert">
+                                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                                <strong>{{ message.tags|title }}:</strong> {{ message }}
+                            </div>
                         {% endfor %}
                     {% endif %}
                     <!-- Nome do Treino -->
                     <div class="form-group">
+                        <label for="name" class="form-label">Nome do Treino</label>
                         <input id="name" type="text" name="name" required class="input-material form-control-lg" placeholder="Nome">
                     </div>
                     <!-- Descrição do Treino -->
                     <div class="form-group">
+                        <label for="description" class="form-label">Descrição do Treino</label>
                         <input id="description" type="text" name="description" class="input-material form-control-lg" placeholder="Descrição">
+                    </div>
+                    <!-- Ordem do Treino -->
+                    <div class="form-group">
+                        <label for="order_id" class="form-label">Ordem do Treino</label>
+                        <input id="order_id" type="number" name="order_id" required class="input-material form-control-lg" min="1" placeholder="Ordem do Treino">
                     </div>
                     <!-- Botão Adicionar Treino -->
                     <input id="add" type="submit" value="Adicionar" class="btn btn-primary btn-lg">

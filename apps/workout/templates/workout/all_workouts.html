@@ -12,6 +12,24 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-lg-12 pb-4">
+                <!-- Adicionar área para mensagens de sucesso ou erro -->
+                {% if messages %}
+                    <div class="alert alert-success" role="alert">
+                        {% for message in messages %}
+                            {{ message }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            
+                <!-- Botão para importar planilha -->
+                <form action="{% url 'importar_treinos' %}" method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="input-group mb-3">
+                        <input type="file" name="arquivo_excel" class="form-control" required> <!-- Nome ajustado para arquivo_excel -->
+                        <button class="btn btn-primary" type="submit">Importar Treinos</button>
+                    </div>
+                </form>                            
+
                 <!-- Verificar se há treinos disponíveis -->
                 {% if workouts %}
                 <table class="table table-sm all-workouts-table mb-4">
@@ -24,16 +42,17 @@
                     </thead>
                     <tbody>
                         {% for workout in workouts %}
-                        <tr>
+                        <tr data-id="{{ workout.id }}">
                             <td scope="row">{{ workout.created_at | date:"d/m/Y" }}</td>
                             <td><em>{{ workout.name }}</em></td>
                             <td>
-                                <form action="/workout/{{ workout.id }}" style="display:inline;">
+                                <!-- Botão Ver com formulário separado para evitar conflitos -->
+                                <form action="/workout/{{ workout.id }}" method="GET" style="display:inline;">
                                     <button class="btn btn-link btn-sm view-link" type="submit">
                                         <i class="fa fa-eye"></i> Ver
                                     </button>
                                 </form>
-                                <!-- Botão para excluir o treino -->
+                                <!-- Formulário de exclusão -->
                                 <form action="/workout/{{ workout.id }}/delete" method="POST" style="display:inline;">
                                     {% csrf_token %}
                                     <button class="btn btn-link btn-sm text-danger" type="submit">
@@ -45,39 +64,6 @@
                         {% endfor %}
                     </tbody>
                 </table>
-                {% if workouts.has_other_pages %}
-                <ul class="pagination pagination-lg justify-content-end mb-4">
-                    {% if workouts.has_previous %}
-                    <li class="page-item">
-                        <a href="?page={{ workouts.previous_page_number }}" class="page-link bg-dark text-white">Anterior</a>
-                    </li>
-                    {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link end-nav bg-dark">Anterior</span>
-                    </li>
-                    {% endif %}
-                    {% for i in workouts.paginator.page_range %}
-                    {% if workouts.number == i %}
-                    <li class="page-item active">
-                        <span class="page-link">{{ i }} <span class="sr-only">(atual)</span></span>
-                    </li>
-                    {% else %}
-                    <li class="page-item">
-                        <a href="?page={{ i }}" class="page-link bg-dark text-white">{{ i }}</a>
-                    </li>
-                    {% endif %}
-                    {% endfor %}
-                    {% if workouts.has_next %}
-                    <li class="page-item">
-                        <a href="?page={{ workouts.next_page_number }}" class="page-link bg-dark text-white">Próxima</a>
-                    </li>
-                    {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link bg-dark">Próxima</span>
-                    </li>
-                    {% endif %}
-                </ul>
-                {% endif %}
                 {% else %}
                 <div class="card text-white bg-dark mb-4">
                     <div class="card-body">
@@ -91,4 +77,15 @@
         </div>
     </div>
 </section>
+
+<script>
+    document.querySelector('form').addEventListener('submit', function (event) {
+        const fileInput = document.querySelector('input[name="arquivo_excel"]');
+        const allowedExtensions = /(\.xlsx)$/i;
+        if (!allowedExtensions.exec(fileInput.value)) {
+            alert('Por favor, envie um arquivo Excel (.xlsx).');
+            event.preventDefault();
+        }
+    });
+</script>
 {% endblock %}

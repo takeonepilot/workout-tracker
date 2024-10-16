@@ -5,8 +5,8 @@ from django.contrib.auth.models import (
     BaseUserManager,
     PermissionsMixin,
 )
-from django.utils import timezone
 import re
+import json
 
 
 class UserManager(BaseUserManager):
@@ -130,33 +130,29 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 class WorkoutManager(models.Manager):
-    def new(self, **kwargs):
+    def create_workout(self, **kwargs):
         errors = []
-
-        if len(kwargs["name"]) < 2:
-            errors.append("Name is required and must be at least 2 characters long.")
-
-        WORKOUT_REGEX = re.compile(r"^[\w\s!@#$%^&*()?]*$")
-        if not WORKOUT_REGEX.match(kwargs["name"]):
-            errors.append("Name must contain valid characters.")
-
-        if len(kwargs["description"]) < 2:
+        # Validação básica do nome e descrição
+        if len(kwargs.get("name", "")) < 2:
+            errors.append("O nome é obrigatório e deve ter pelo menos 2 caracteres.")
+        if len(kwargs.get("description", "")) < 2:
             errors.append(
-                "Description is required and must be at least 2 characters long."
+                "A descrição é obrigatória e deve ter pelo menos 2 caracteres."
             )
-        if not WORKOUT_REGEX.match(kwargs["description"]):
-            errors.append("Description must contain valid characters.")
+        if kwargs.get("order_id", 0) <= 0:
+            errors.append("A ordem do treino é obrigatória e deve ser maior que 0.")
 
-        if not errors:
-            workout = Workout(
-                name=kwargs["name"],
-                description=kwargs["description"],
-                user=kwargs["user"],
-            )
-            workout.save()
-            return {"workout": workout}
-        else:
+        if errors:
             return {"errors": errors}
+
+        # Criar e salvar o Workout
+        workout = self.create(
+            name=kwargs["name"],
+            description=kwargs["description"],
+            user=kwargs["user"],
+            order_id=kwargs["order_id"],
+        )
+        return {"workout": workout}
 
 
 class Workout(models.Model):
@@ -166,55 +162,52 @@ class Workout(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    repeat_days = models.IntegerField(default=30)
+    order_id = models.PositiveIntegerField(default=0)  # Campo para armazenar a ordem
 
     objects = WorkoutManager()
 
+    def __str__(self):
+        return f"{self.name} - {self.user.username}"
+
 
 class ExerciseManager(models.Manager):
-    def new(self, **kwargs):
+    def create_exercise(self, **kwargs):
         errors = []
-
-        if len(kwargs["name"]) < 2:
+        # Validação do nome do exercício
+        if len(kwargs.get("name", "")) < 2:
             errors.append(
                 "O nome do exercício é obrigatório e deve ter pelo menos 2 caracteres."
             )
-
         try:
-            kwargs["sets"] = int(kwargs["sets"])
-            kwargs["repetitions"] = int(kwargs["repetitions"])
-            kwargs["rpe"] = int(kwargs["rpe"])
-
-            if (
-                kwargs["sets"] <= 0
-                or kwargs["repetitions"] <= 0
-                or not (1 <= kwargs["rpe"] <= 10)
-            ):
+            sets = int(kwargs.get("sets", 1))
+            repetitions = int(kwargs.get("repetitions", 1))
+            rpe = int(kwargs.get("rpe", 8))
+            if sets <= 0 or repetitions <= 0 or not (1 <= rpe <= 10):
                 errors.append(
-                    "Séries, repetições e RPE devem ser números positivos, e o RPE deve estar entre 1 e 10."
+                    "Séries, repetições devem ser positivos e RPE entre 1 e 10."
                 )
         except ValueError:
             errors.append("Séries, repetições e RPE devem ser números válidos.")
 
-        if not errors:
-            exercise = Exercise(
-                name=kwargs["name"],
-                sets=kwargs["sets"],
-                repetitions=kwargs["repetitions"],
-                rpe=kwargs["rpe"],
-                workout=kwargs["workout"],
-            )
-            exercise.save()
-            return {"exercise": exercise}
-        else:
+        if errors:
             return {"errors": errors}
+
+        # Criar e salvar o Exercise
+        exercise = self.create(
+            name=kwargs["name"],
+            sets=sets,
+            repetitions=repetitions,
+            rpe=rpe,
+            workout=kwargs["workout"],
+        )
+        return {"exercise": exercise}
 
 
 class Exercise(models.Model):
     name = models.CharField(max_length=50)
-    sets = models.IntegerField(default=1)
-    repetitions = models.IntegerField()
-    rpe = models.IntegerField(default=8)
+    sets = models.PositiveIntegerField(default=1)
+    repetitions = models.PositiveIntegerField()
+    rpe = models.PositiveIntegerField(default=8)
     workout = models.ForeignKey(Workout, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -225,63 +218,91 @@ class Exercise(models.Model):
         return f"{self.name} - {self.sets}x{self.repetitions} RPE {self.rpe}"
 
 
-class WorkoutPlan(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100)
-    cycle_length = models.IntegerField(
-        default=30
-    )  # Número de sessões antes de revisar o plano
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"Plano de Treino: {self.name} - {self.user.username}"
-
-
-class PlanWorkout(models.Model):
-    plan = models.ForeignKey(WorkoutPlan, on_delete=models.CASCADE)
-    workout = models.ForeignKey(Workout, on_delete=models.CASCADE)
-    order = models.PositiveIntegerField()  # Define a ordem dos treinos no plano
-
-    class Meta:
-        ordering = ["order"]
-
-    def __str__(self):
-        return f"{self.plan.name} - {self.workout.name} (Ordem: {self.order})"
-
-
 class WorkoutSession(models.Model):
-    workout_plan = models.ForeignKey(WorkoutPlan, on_delete=models.CASCADE)
-    workout = models.ForeignKey(Workout, on_delete=models.CASCADE, default=1)
+    workout = models.ForeignKey(Workout, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now_add=True)
+    completed = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Sessão de {self.workout.name} em {self.date}"
+
+    def create_exercise_sessions(self):
+        """Método para criar ExerciseSession ao iniciar uma WorkoutSession."""
+        exercises = self.workout.exercise_set.all()
+
+        if not exercises:
+            print(
+                f"Não foram encontrados exercícios para o treino: {self.workout.name}"
+            )
+            return  # Se não houver exercícios, retorne sem criar
+
+        print(f"Exercícios encontrados para o treino {self.workout.name}: {exercises}")
+
+        for exercise in exercises:
+            ExerciseSession.objects.create(
+                workout_session=self,
+                exercise=exercise,
+                weight_used=0,  # Valor padrão
+                actual_repetitions=0,
+                sets=exercise.sets,
+                rpe=exercise.rpe,
+            )
+            print(f"ExerciseSession criado para o exercício: {exercise.name}")
+
+
+class ExerciseSession(models.Model):
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
+    workout_session = models.ForeignKey(
+        WorkoutSession, related_name="exercise_sessions", on_delete=models.CASCADE
+    )
+    weight_used = models.DecimalField(max_digits=5, decimal_places=1, default=0.0)
+    actual_repetitions = models.IntegerField(default=0)
+    sets = models.IntegerField(default=1)
+    rpe = models.IntegerField()
+
+    def __str__(self):
+        return f"{self.exercise.name} ({self.sets} sets, RPE {self.rpe})"
+
+
+class Series(models.Model):
+    exercise_session = models.ForeignKey(
+        ExerciseSession, related_name="series", on_delete=models.CASCADE
+    )
+    weight_used = models.DecimalField(max_digits=5, decimal_places=1)
+    repetitions = models.IntegerField()
+
+    def __str__(self):
+        return (
+            f"Series {self.id} - Weight: {self.weight_used}, Reps: {self.repetitions}"
+        )
+
+
+class WorkoutHistory(models.Model):
+    workout = models.ForeignKey(
+        Workout, on_delete=models.CASCADE
+    )  # Referência ao treino realizado
+    user = models.ForeignKey(User, on_delete=models.CASCADE)  # Referência ao usuário
+    date = models.DateTimeField(auto_now_add=True)  # Data da sessão
+    completed = models.BooleanField(default=False)  # Status da sessão
 
     def __str__(self):
         return f"Sessão de {self.workout.name} em {self.date}"
 
 
-class ExerciseSession(models.Model):
-    exercise_plan = models.ForeignKey(Exercise, on_delete=models.CASCADE)
-    workout_session = models.ForeignKey(
-        WorkoutSession, related_name="exercise_sessions", on_delete=models.CASCADE
-    )
-    weight_used = models.DecimalField(max_digits=5, decimal_places=1)
-    actual_repetitions = models.IntegerField()
-    sets = models.IntegerField(default=1)
-    rpe = models.IntegerField()
+class ExerciseHistory(models.Model):
+    workout_history = models.ForeignKey(
+        WorkoutHistory, related_name="exercise_histories", on_delete=models.CASCADE
+    )  # Referência ao histórico do treino
+    exercise = models.ForeignKey(
+        Exercise, on_delete=models.CASCADE
+    )  # Referência ao exercício realizado
+    weight_used = models.DecimalField(
+        max_digits=5, decimal_places=1, default=0.0
+    )  # Peso utilizado
+    actual_repetitions = models.IntegerField(default=0)  # Repetições reais
+    sets = models.IntegerField(default=1)  # Número de séries
+    rpe = models.IntegerField()  # RPE (Rate of Perceived Exertion)
 
     def __str__(self):
-        return f"{self.exercise_plan.name} - {self.weight_used}kg x {self.actual_repetitions} reps, {self.sets} séries"
-
-
-class ExerciseLog(models.Model):
-    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
-    performed_weight = models.DecimalField(
-        max_digits=5, decimal_places=1
-    )  # Peso utilizado na série
-    performed_repetitions = models.IntegerField()  # Repetições realizadas
-    date = models.DateTimeField(auto_now_add=True)
-    exercise_session = models.ForeignKey(ExerciseSession, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f"{self.exercise.name} - {self.performed_weight}kg x {self.performed_repetitions} reps em {self.date}"
+        return f"{self.exercise.name} em {self.workout_history.date} - {self.sets}x{self.actual_repetitions} RPE {self.rpe}"
