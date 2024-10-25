@@ -59,10 +59,11 @@
                                 <th>Peso (kg)</th>
                                 <th>Repetições</th>
                                 <th>RPE</th>
+                                <th>Confirmar</th> <!-- Coluna de confirmação -->
                             </tr>
                         </thead>
                         <tbody>
-                            {% load custom_filters %}  <!-- Carregando os filtros personalizados -->
+                            {% load custom_filters %}
                             {% for exercise_data in exercises_with_series %}
                                 {% with exercise=exercise_data.exercise series=exercise_data.series series_range=exercise_data.series_range %}
                                     {% for i in series_range %}
@@ -72,19 +73,23 @@
                                             <td>
                                                 <input type="number" 
                                                        name="weight_{{ exercise.id }}_{{ i }}" 
-                                                       value="{{ series|get_item_at_index:i|default:0 }}" 
+                                                       placeholder="0"  
                                                        step="0.1" 
-                                                       class="form-control input-sm input-dark"
-                                                       oninput="checkAndMoveToNextSeries({{ exercise.id }}, {{ i }}, this)">
+                                                       class="form-control input-sm input-dark">
                                             </td>
                                             <td>
                                                 <input type="number" 
                                                        name="repetitions_{{ exercise.id }}_{{ i }}" 
-                                                       value="{{ series|get_item_at_index:i|default:0 }}" 
-                                                       class="form-control input-sm input-dark"
-                                                       oninput="checkAndMoveToNextSeries({{ exercise.id }}, {{ i }}, this)">
+                                                       placeholder="0"  
+                                                       class="form-control input-sm input-dark">
                                             </td>                                            
                                             <td>{{ exercise.rpe }}</td>
+                                            <td>
+                                                <button type="button" class="btn btn-success" 
+                                                        onclick="confirmSeries({{ exercise.id }}, {{ i }})">
+                                                    ✔
+                                                </button>
+                                            </td>
                                         </tr>
                                     {% endfor %}
                                 {% endwith %}
@@ -103,57 +108,36 @@
         </div>
     </div>
 </section>
+
 <script>
-    function checkAndMoveToNextSeries(exerciseId, currentSeries) {
+    function confirmSeries(exerciseId, currentSeries) {
         // Obter os valores dos campos de peso e repetições
         const weightInput = document.querySelector(`input[name="weight_${exerciseId}_${currentSeries}"]`);
         const repetitionsInput = document.querySelector(`input[name="repetitions_${exerciseId}_${currentSeries}"]`);
     
-        // Verifica se ambos os campos têm valor
-        if (weightInput.value && repetitionsInput.value) {
-            // Ocultar a linha da série atual
+        // Converte os valores para números e verifica se ambos são válidos (maiores que 0)
+        const weightValue = parseFloat(weightInput.value);
+        const repetitionsValue = parseInt(repetitionsInput.value);
+    
+        // Verifica se ambos os campos (peso e repetições) têm valores válidos
+        if (!isNaN(weightValue) && weightValue > 0 && !isNaN(repetitionsValue) && repetitionsValue > 0) {
+            // Oculta a linha atual
             const currentRow = document.getElementById(`series-row-${exerciseId}-${currentSeries}`);
             if (currentRow) {
-                currentRow.style.display = "none"; // Oculta a linha atual
+                currentRow.style.display = "none";
             }
     
-            // Tenta exibir a próxima linha
+            // Exibe a próxima linha
             const nextSeries = currentSeries + 1;
             const nextRow = document.getElementById(`series-row-${exerciseId}-${nextSeries}`);
             if (nextRow) {
                 nextRow.style.display = "table-row"; // Torna a próxima série visível
                 nextRow.querySelector('input[type="number"]').focus(); // Foca no campo da próxima série
             }
+        } else {
+            alert("Por favor, preencha o peso e as repetições antes de continuar.");
         }
     }
-    // Adicionar evento 'blur' e 'keypress' para os campos de peso e repetições
-    document.addEventListener('DOMContentLoaded', function() {
-        const inputs = document.querySelectorAll('input[type="number"]');
-        inputs.forEach(input => {
-            input.addEventListener('blur', function() {
-                // Obter o ID do exercício e da série a partir do nome do input
-                const nameParts = this.name.split('_');
-                const exerciseId = nameParts[1];
-                const seriesNumber = nameParts[2];
-
-                // Verifica se ambos os campos de peso e repetições estão preenchidos
-                checkAndMoveToNextSeries(exerciseId, seriesNumber);
-            });
-
-            input.addEventListener('keypress', function(event) {
-                // Verifica se a tecla pressionada é "Enter"
-                if (event.key === 'Enter') {
-                    event.preventDefault(); // Evitar o comportamento padrão
-                    const nameParts = this.name.split('_');
-                    const exerciseId = nameParts[1];
-                    const seriesNumber = nameParts[2];
-
-                    // Verifica se ambos os campos de peso e repetições estão preenchidos
-                    checkAndMoveToNextSeries(exerciseId, seriesNumber);
-                }
-            });
-        });
-    });
 </script>
 
 {% endblock %}

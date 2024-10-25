@@ -23,28 +23,30 @@
                         </div>
                     {% endfor %}
                 {% endif %}
-                <table class="table table-striped text-light mt-3">
-                    <thead class="thead-light">
-                        <tr>
-                            <th>Data</th>
-                            <th>Treino</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for session in sessions %}
-                        <tr>
-                            <td>{{ session.date | date:"d/m/Y H:i" }}</td>
-                            <td>{{ session.workout.name }}</td>
-                            <td>
-                                <a href="{% url 'view_session' session.id %}" class="btn btn-outline-light btn-sm">Ver Detalhes</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% if not sessions %}
-                <p class="text-muted">Nenhuma sessão de treino concluída ainda.</p>
+                
+                {% if sessions.exists %}
+                    <table class="table table-striped text-light mt-3">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Data</th>
+                                <th>Treino</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for session in sessions %}
+                            <tr>
+                                <td>{{ session.date | date:"d/m/Y H:i" }}</td>
+                                <td>{{ session.workout.name }}</td>
+                                <td>
+                                    <a href="{% url 'view_history_session' session.id %}" class="btn btn-outline-light btn-sm">Ver Detalhes</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="text-muted">Nenhuma sessão de treino concluída ainda.</p>
                 {% endif %}
             </div>
         </div>

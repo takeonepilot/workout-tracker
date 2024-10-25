@@ -12,7 +12,7 @@ urlpatterns = [
     path("dashboard", views.dashboard, name="dashboard"),  # Dashboard view
     # Workout Management
     path("workout", views.new_workout, name="new_workout"),  # Add new workout
-    path("workouts", views.all_workouts, name="all_workouts"),  # View all 
+    path("workouts", views.all_workouts, name="all_workouts"),  # View all
     path("workout/<int:id>/", views.workout, name="view_workout"),  # View a workout
     path(
         "workout/<int:id>/exercise", views.exercise, name="add_exercise"
@@ -37,6 +37,11 @@ urlpatterns = [
         name="start_workout_session",
     ),
     path("history", views.session_history, name="session_history"),
+    path(
+        "workout/history/<int:id>/",
+        views.view_history_session,
+        name="view_history_session",
+    ),  # Add new route for viewing session history details
     # Import Workouts via Spreadsheet
     path(
         "workouts/import", views.importar_treinos, name="importar_treinos"

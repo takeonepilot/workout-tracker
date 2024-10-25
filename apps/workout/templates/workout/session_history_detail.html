@@ -1,0 +1,56 @@
+{% extends 'workout/base.html' %}
+
+{% block title %}Detalhes da Sessão de Treino{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container-fluid">
+        <h2 class="h5 no-margin-bottom text-white">Detalhes da Sessão de Treino: {{ session.workout.name }}</h2>
+        <p><strong>Data:</strong> {{ session.date | date:"d/m/Y H:i" }}</p>
+    </div>
+</div>
+
+<section class="no-padding-bottom">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-lg-12 text-light">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <table class="table table-dark table-hover table-borderless mt-3">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Exercício</th>
+                            <th>Séries</th>
+                            <th>Peso Usado (kg)</th>
+                            <th>Repetições</th>
+                            <th>RPE</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for exercise_history in exercise_histories %}
+                            <tr>
+                                <td>{{ exercise_history.exercise.name }}</td>
+                                <td>{{ exercise_history.sets }}</td>
+                                <td>{{ exercise_history.weight_used }}</td>
+                                <td>{{ exercise_history.actual_repetitions }}</td>
+                                <td>{{ exercise_history.rpe }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+
+<a href="{% url 'session_history' %}" class="btn btn-secondary mt-3">Voltar ao Histórico de Sessões</a>
+
+{% endblock %}
